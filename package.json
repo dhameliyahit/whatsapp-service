@@ -1,0 +1,19 @@
+{
+  "name": "whatsapp-service-workspace",
+  "version": "1.0.0",
+  "description": "Verifinder Fullstack Workspace - Angular Frontend & WhatsApp Gateway Service",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/run.js verifinder npm run build && node scripts/run.js service npm run build",
+    "build:client": "node scripts/run.js verifinder npm run build",
+    "build:server": "node scripts/run.js service npm run build",
+    "start": "node scripts/run.js service npm start",
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "node scripts/run.js service npm run dev",
+    "dev:client": "node scripts/run.js verifinder npm start",
+    "install:all": "npm install && npm install --prefix verifinder && npm install --prefix service"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

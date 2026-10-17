@@ -1,0 +1,583 @@
+<div class="max-w-6xl mx-auto space-y-6">
+  <!-- Top Navigation & Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">API Keys &amp; Developer Integration</h1>
+      <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+        Manage API credentials, configure outbound delivery webhooks, and integrate verification into your stack.
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="openCreateModal()"
+      class="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-2 shrink-0 cursor-pointer"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      <span>Generate New API Key</span>
+    </button>
+  </div>
+
+  <!-- Generate New Key Modal Dialog -->
+  @if (isCreateModalOpen()) {
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+      <div class="bg-white rounded-[14px] border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4">
+        @if (!generatedKey()) {
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Create New API Key</h3>
+            <p class="text-xs text-slate-500 mt-1">
+              Give your API key a descriptive label so you can track where it is being used.
+            </p>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Key Name / Label</label>
+            <input
+              type="text"
+              [value]="newKeyName()"
+              (input)="newKeyName.set($any($event.target).value)"
+              placeholder="e.g. Production Backend, Verification Service"
+              class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-[10px] focus:outline-none focus:border-blue-600"
+              autoFocus
+            />
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button
+              type="button"
+              (click)="closeCreateModal()"
+              class="btn-secondary !text-xs !py-2 !px-3.5"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="onCreateKey()"
+              [disabled]="isCreating()"
+              class="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5"
+            >
+              <span>{{ isCreating() ? 'Generating...' : 'Create Key' }}</span>
+            </button>
+          </div>
+        } @else {
+          <!-- Key Generated Success Banner -->
+          <div class="space-y-4">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+
+            <div class="text-center">
+              <h4 class="text-sm font-bold text-slate-900">API Key Generated</h4>
+              <div class="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-[10px] p-2.5 mt-2 text-left">
+                <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span><strong>Security Notice:</strong> Copy this key now. For security purposes, it will never be displayed in full again.</span>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-[10px] p-2">
+                <code class="text-xs font-mono font-bold text-slate-900 truncate flex-1 select-all">
+                  {{ generatedKey() }}
+                </code>
+                <button
+                  type="button"
+                  (click)="copyToClipboard(generatedKey()!, 'API key copied!')"
+                  class="btn-secondary !text-[11px] !py-1 !px-2.5 shrink-0"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="pt-2 text-center">
+              <button
+                type="button"
+                (click)="closeCreateModal()"
+                class="btn-primary !text-xs !py-2 !px-6 w-full"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Active API Keys Table Card -->
+  <div class="bg-white rounded-[14px] border border-slate-200/90 shadow-xs overflow-hidden">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h2 class="text-sm font-bold text-slate-900 tracking-tight uppercase">
+          Active API Keys
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">Manage authentication keys used by your backend services</p>
+      </div>
+      <span class="text-xs text-slate-400">{{ apiKeys().length }} Keys</span>
+    </div>
+
+    @if (apiKeys().length > 0) {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <th class="py-3 px-4">Key Name</th>
+              <th class="py-3 px-4">Key Prefix</th>
+              <th class="py-3 px-4">Created Date</th>
+              <th class="py-3 px-4">Last Used</th>
+              <th class="py-3 px-4">Status</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (k of apiKeys(); track k._id) {
+              <tr class="hover:bg-slate-50/60 transition-colors">
+                <td class="py-3 px-4 font-semibold text-slate-900">
+                  {{ k.name }}
+                </td>
+                <td class="py-3 px-4">
+                  <code class="font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded-[8px] border border-slate-200/80 text-[11px]">
+                    {{ k.prefix }}
+                  </code>
+                </td>
+                <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">
+                  {{ formatDate(k.createdAt) }}
+                </td>
+                <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">
+                  {{ formatDate(k.lastUsedAt) }}
+                </td>
+                <td class="py-3 px-4">
+                  @if (k.status === 'active') {
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-[10px] uppercase">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <span>Active</span>
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-[10px] bg-slate-100 text-slate-500 border border-slate-200 font-semibold text-[10px] uppercase">
+                      <span>Revoked</span>
+                    </span>
+                  }
+                </td>
+                <td class="py-3 px-4 text-right">
+                  @if (k.status === 'active') {
+                    <button
+                      type="button"
+                      (click)="onRevokeKey(k._id)"
+                      class="text-rose-600 hover:text-rose-800 text-xs font-semibold cursor-pointer hover:underline"
+                    >
+                      Revoke
+                    </button>
+                  } @else {
+                    <span class="text-slate-300 text-xs">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="p-8 text-center space-y-2">
+        <p class="text-xs text-slate-500">No API keys created yet. Generate your first key to start integrating.</p>
+        <button
+          type="button"
+          (click)="openCreateModal()"
+          class="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5 mt-2"
+        >
+          <span>Generate API Key</span>
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Outbound Webhooks Configuration Card -->
+  <div class="bg-white rounded-[14px] border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-5">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-bold text-slate-900 tracking-tight uppercase">
+            Outbound Delivery Webhooks
+          </h2>
+          <span class="px-2 py-0.5 rounded-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold uppercase">
+            HMAC-SHA256 Signed
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">
+          Receive real-time HTTP POST notifications when an OTP is verified or a message is delivered.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        @if (webhookUrl()) {
+          <button
+            type="button"
+            (click)="onTestWebhook()"
+            [disabled]="isTestingWebhook()"
+            class="btn-secondary !text-xs !py-2 !px-3.5 inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            @if (isTestingWebhook()) {
+              <span class="w-3.5 h-3.5 border-2 border-slate-700 border-t-transparent rounded-full animate-spin"></span>
+              <span>Pinging...</span>
+            } @else {
+              <svg class="w-3.5 h-3.5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span>Send Test Ping</span>
+            }
+          </button>
+          <button
+            type="button"
+            (click)="onDeleteWebhook()"
+            class="btn-danger-outline !text-xs !py-2 !px-3"
+            title="Remove webhook"
+          >
+            Remove
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <!-- Target URL Input -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold text-slate-700">
+          Webhook Destination URL (HTTPS recommended)
+        </label>
+        <div class="flex items-center gap-2">
+          <input
+            type="url"
+            [value]="webhookUrl()"
+            (input)="webhookUrl.set($any($event.target).value)"
+            placeholder="https://api.yourdomain.com/webhooks/whatsapp"
+            class="w-full px-3.5 py-2.5 text-xs font-mono bg-white border border-slate-200 rounded-[10px] focus:outline-none focus:border-blue-600"
+          />
+          <button
+            type="button"
+            (click)="onSaveWebhook()"
+            [disabled]="isSavingWebhook() || !webhookUrl()"
+            class="btn-primary !text-xs !py-2.5 !px-5 shrink-0"
+          >
+            {{ isSavingWebhook() ? 'Saving...' : 'Save Webhook' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Secret Key (HMAC Verification) -->
+      @if (webhookSecret()) {
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold text-slate-700">
+              Webhook Signing Secret (HMAC-SHA256)
+            </label>
+            <button
+              type="button"
+              (click)="onRotateSecret()"
+              [disabled]="isRotatingSecret()"
+              class="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer"
+            >
+              Rotate Secret
+            </button>
+          </div>
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-[10px] p-2">
+            <code class="text-xs font-mono text-slate-700 flex-1 truncate select-all">
+              {{ isSecretVisible() ? webhookSecret() : '••••••••••••••••••••••••••••••••' }}
+            </code>
+            <button
+              type="button"
+              (click)="isSecretVisible.update(v => !v)"
+              class="px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
+            >
+              {{ isSecretVisible() ? 'Hide' : 'Reveal' }}
+            </button>
+            <button
+              type="button"
+              (click)="copyToClipboard(webhookSecret(), 'Webhook secret copied!')"
+              class="btn-secondary !text-[11px] !py-1 !px-2.5 shrink-0"
+            >
+              Copy
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400">
+            Incoming requests contain an <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">X-Verifinder-Signature</code> header generated using this secret.
+          </p>
+        </div>
+      }
+
+      <!-- Subscribed Events Checkboxes -->
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold text-slate-700">
+          Subscribed Notification Events
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+          <label class="flex items-center gap-2 p-2.5 rounded-[10px] border border-slate-200 bg-slate-50/60 text-xs text-slate-800 cursor-pointer hover:bg-slate-50">
+            <input
+              type="checkbox"
+              [checked]="selectedEvents().includes('otp.verified')"
+              (change)="toggleEvent('otp.verified')"
+              class="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <p class="font-semibold leading-tight">otp.verified</p>
+              <p class="text-[10px] text-slate-400">OTP code confirmed</p>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-2 p-2.5 rounded-[10px] border border-slate-200 bg-slate-50/60 text-xs text-slate-800 cursor-pointer hover:bg-slate-50">
+            <input
+              type="checkbox"
+              [checked]="selectedEvents().includes('message.sent')"
+              (change)="toggleEvent('message.sent')"
+              class="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <p class="font-semibold leading-tight">message.sent</p>
+              <p class="text-[10px] text-slate-400">Message queued &amp; sent</p>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-2 p-2.5 rounded-[10px] border border-slate-200 bg-slate-50/60 text-xs text-slate-800 cursor-pointer hover:bg-slate-50">
+            <input
+              type="checkbox"
+              [checked]="selectedEvents().includes('message.delivered')"
+              (change)="toggleEvent('message.delivered')"
+              class="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <p class="font-semibold leading-tight">message.delivered</p>
+              <p class="text-[10px] text-slate-400">Delivered to recipient</p>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-2 p-2.5 rounded-[10px] border border-slate-200 bg-slate-50/60 text-xs text-slate-800 cursor-pointer hover:bg-slate-50">
+            <input
+              type="checkbox"
+              [checked]="selectedEvents().includes('message.failed')"
+              (change)="toggleEvent('message.failed')"
+              class="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <p class="font-semibold leading-tight">message.failed</p>
+              <p class="text-[10px] text-slate-400">Delivery error / blocked</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Last Delivery Diagnostics -->
+      @if (lastDeliveryStatus() !== null) {
+        <div class="p-3 rounded-[10px] bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+          <span class="text-slate-600">Last webhook delivery attempt:</span>
+          <div class="flex items-center gap-2">
+            <span
+              class="font-mono font-bold px-2 py-0.5 rounded-[8px]"
+              [class.bg-emerald-100]="lastDeliveryStatus() === 200"
+              [class.text-emerald-800]="lastDeliveryStatus() === 200"
+              [class.bg-rose-100]="lastDeliveryStatus() !== 200"
+              [class.text-rose-800]="lastDeliveryStatus() !== 200"
+            >
+              HTTP {{ lastDeliveryStatus() }}
+            </span>
+            <span class="text-slate-400 font-mono text-[11px]">{{ formatDate(lastDeliveryAt() || '') }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Real-World Enterprise Case Studies Section -->
+  <div class="bg-white rounded-[14px] border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-5">
+    <div class="border-b border-slate-100 pb-3">
+      <div class="flex items-center gap-2">
+        <h2 class="text-sm font-bold text-slate-900 tracking-tight uppercase">
+          Enterprise Integration Case Studies
+        </h2>
+        <span class="px-2 py-0.5 rounded-[10px] bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-semibold uppercase">
+          Production Blueprints
+        </span>
+      </div>
+      <p class="text-xs text-slate-400 mt-0.5">
+        How real companies integrate Verifinder into their customer journeys to reduce fraud and accelerate verification.
+      </p>
+    </div>
+
+    <!-- Case Study Tabs -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+      @for (cs of caseStudies; track cs.id) {
+        <button
+          type="button"
+          (click)="activeCaseStudyId.set(cs.id)"
+          class="p-3.5 rounded-[12px] border text-left transition-all cursor-pointer space-y-1.5"
+          [class.bg-blue-50/70]="activeCaseStudyId() === cs.id"
+          [class.border-blue-400]="activeCaseStudyId() === cs.id"
+          [class.shadow-2xs]="activeCaseStudyId() === cs.id"
+          [class.bg-slate-50/60]="activeCaseStudyId() !== cs.id"
+          [class.border-slate-200]="activeCaseStudyId() !== cs.id"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[6px] bg-white border border-slate-200 text-slate-600">
+              {{ cs.badge }}
+            </span>
+            @if (activeCaseStudyId() === cs.id) {
+              <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+            }
+          </div>
+          <p class="text-xs font-bold text-slate-900 leading-snug">{{ cs.title }}</p>
+        </button>
+      }
+    </div>
+
+    <!-- Active Case Study Detail Card -->
+    <div class="p-4 rounded-[12px] bg-slate-50 border border-slate-200/90 space-y-4">
+      <div>
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Problem &amp; Value Proposition</h3>
+        <p class="text-xs text-slate-600 mt-1 leading-relaxed">{{ activeCaseStudy.problemSolved }}</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <!-- 4 Step Flow (7 cols) -->
+        <div class="lg:col-span-7 space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Production Request Flow</h4>
+          <div class="space-y-1.5">
+            @for (s of activeCaseStudy.steps; track s.step) {
+              <div class="p-2.5 rounded-[8px] bg-white border border-slate-200 flex items-start gap-2.5 text-xs">
+                <span class="font-bold text-blue-600 shrink-0 font-mono text-[11px]">{{ s.step }}</span>
+                <span class="text-slate-600 leading-snug">{{ s.detail }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Sample Request Payload (5 cols) -->
+        <div class="lg:col-span-5 space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Sample Backend Payload</h4>
+          <div class="bg-slate-900 rounded-[10px] p-3 text-slate-100 font-mono text-[11px] overflow-x-auto shadow-2xs">
+            <pre class="whitespace-pre"><code>{{ activeCaseStudy.payloadPreview }}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Language Integration Code Center -->
+  <div class="bg-white rounded-[14px] border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+      <div>
+        <h2 class="text-sm font-bold text-slate-900 tracking-tight uppercase">
+          Multi-Language Production Code Snippets
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">
+          Copy-paste ready implementation code for complete OTP dispatch, verification, and webhook handling
+        </p>
+      </div>
+
+      <!-- Language Selector Tabs -->
+      <div class="flex items-center flex-wrap gap-1 bg-slate-100 p-1 rounded-[10px]">
+        @for (tab of ['curl', 'node', 'python', 'php', 'java', 'go', 'verify']; track tab) {
+          <button
+            type="button"
+            (click)="activeCodeTab.set($any(tab))"
+            class="px-2.5 py-1 rounded-[8px] text-xs font-semibold transition-all cursor-pointer capitalize"
+            [class.bg-white]="activeCodeTab() === tab"
+            [class.text-slate-900]="activeCodeTab() === tab"
+            [class.shadow-2xs]="activeCodeTab() === tab"
+            [class.text-slate-500]="activeCodeTab() !== tab"
+          >
+            {{ tab === 'verify' ? 'Verify Signature' : (tab === 'node' ? 'Node.js' : tab) }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Code Display Box -->
+    <div class="relative bg-slate-900 rounded-[12px] p-4 text-slate-100 font-mono text-xs overflow-x-auto shadow-sm">
+      <div class="absolute top-3 right-3">
+        <button
+          type="button"
+          (click)="copyToClipboard(snippetContent, 'Code snippet copied!')"
+          class="px-2.5 py-1 rounded-[8px] bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-sans font-semibold transition-colors cursor-pointer border border-slate-700"
+        >
+          Copy Code
+        </button>
+      </div>
+
+      <!-- Preformatted Snippets -->
+      <pre class="whitespace-pre font-mono text-xs text-slate-100"><code>{{ snippetContent }}</code></pre>
+    </div>
+
+    <!-- API Reference Specs -->
+    <div class="pt-2 border-t border-slate-100">
+      <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Endpoint Specifications</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div class="p-3 bg-slate-50 rounded-[10px] border border-slate-200/80">
+          <p class="font-bold text-slate-800">Send OTP Endpoint</p>
+          <p class="font-mono text-blue-600 mt-0.5">POST {{ apiUrl }}/otp/send</p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-[10px] border border-slate-200/80">
+          <p class="font-bold text-slate-800">Verify OTP Endpoint</p>
+          <p class="font-mono text-blue-600 mt-0.5">POST {{ apiUrl }}/otp/verify</p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-[10px] border border-slate-200/80">
+          <p class="font-bold text-slate-800">Authentication</p>
+          <p class="font-mono text-slate-600 mt-0.5">Header: X-API-Key: vf_live_...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advisory Card: WhatsApp Business Account Branding & Trust -->
+  <div class="bg-white rounded-[14px] border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-4">
+    <div class="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+      <div class="w-8 h-8 rounded-[8px] bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm shrink-0">
+        WP
+      </div>
+      <div>
+        <h3 class="text-sm font-bold text-slate-900 tracking-tight">
+          How WhatsApp Branding &amp; Company Logos Work in Production
+        </h3>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Best practices for ensuring customer trust when receiving OTPs and transactional notifications.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+      <div class="p-3.5 rounded-[12px] bg-slate-50 border border-slate-200/90 space-y-2">
+        <h4 class="font-bold text-slate-900 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+          <span>1. Use WhatsApp Business App</span>
+        </h4>
+        <p class="text-slate-600 leading-relaxed">
+          Install the free <strong>WhatsApp Business app</strong> on your phone with a dedicated business SIM or eSIM. Set your <strong>Brand Logo as the Profile Picture</strong>, official company name, category, website, and support email.
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-[12px] bg-slate-50 border border-slate-200/90 space-y-2">
+        <h4 class="font-bold text-slate-900 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          <span>2. How Customers See It</span>
+        </h4>
+        <p class="text-slate-600 leading-relaxed">
+          When Verifinder sends messages through this account, the customer’s phone displays your <strong>Company Logo</strong>, business name, and an official <strong>"Business Account"</strong> badge, creating high brand trust.
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-[12px] bg-slate-50 border border-slate-200/90 space-y-2">
+        <h4 class="font-bold text-slate-900 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+          <span>3. Dedicated vs Personal</span>
+        </h4>
+        <p class="text-slate-600 leading-relaxed">
+          Do not use your personal WhatsApp number for production OTPs. Keep your personal WhatsApp separate and use a dedicated line for Verifinder so personal messages never mix with automated customer verification.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

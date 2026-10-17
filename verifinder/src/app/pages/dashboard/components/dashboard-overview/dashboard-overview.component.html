@@ -1,0 +1,388 @@
+<div class="max-w-6xl mx-auto space-y-6">
+  <!-- Page Header -->
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">
+      WhatsApp Gateway
+    </h1>
+    <p class="text-xs sm:text-sm text-slate-500 mt-1">
+      Link your WhatsApp account using QR scan to start sending verification codes.
+    </p>
+  </div>
+
+  <!-- Top Performance Metric Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Metric 1: Total Dispatches -->
+    <div class="bg-white p-4 rounded-[14px] border border-slate-200/90 shadow-xs space-y-1">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Total Dispatches</span>
+        <svg class="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </div>
+      <p class="text-2xl font-bold text-slate-900 font-mono">{{ stats()?.total || 0 }}</p>
+      <p class="text-[11px] text-slate-400">{{ stats()?.last24h || 0 }} sent in last 24h</p>
+    </div>
+
+    <!-- Metric 2: Success Delivery Rate -->
+    <div class="bg-white p-4 rounded-[14px] border border-slate-200/90 shadow-xs space-y-1">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Delivery Rate</span>
+        <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <p class="text-2xl font-bold text-emerald-600 font-mono">{{ (stats()?.successRate ?? 100) }}%</p>
+      <p class="text-[11px] text-emerald-700 font-medium">Enterprise high reliability</p>
+    </div>
+
+    <!-- Metric 3: Active Phone Number -->
+    <div class="bg-white p-4 rounded-[14px] border border-slate-200/90 shadow-xs space-y-1">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Linked Device</span>
+        <svg class="w-4 h-4 text-[#075e54]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+        </svg>
+      </div>
+      <p class="text-sm font-bold text-slate-900 font-mono truncate">
+        {{ session().phoneNumber ? '+' + session().phoneNumber : 'Not Linked' }}
+      </p>
+      <p class="text-[11px] text-slate-400">Multi-Device Baileys</p>
+    </div>
+
+    <!-- Metric 4: Gateway State & Diagnostic -->
+    <div class="bg-white p-4 rounded-[14px] border border-slate-200/90 shadow-xs space-y-1">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Gateway State</span>
+        <span class="w-2 h-2 rounded-full" [class.bg-emerald-500]="session().status === 'connected'" [class.bg-amber-400]="session().status !== 'connected'"></span>
+      </div>
+      <p class="text-sm font-bold capitalize truncate" [class.text-emerald-700]="session().status === 'connected'" [class.text-slate-600]="session().status !== 'connected'">
+        {{ session().status === 'connected' ? 'Online & Ready' : session().status.replace('_', ' ') }}
+      </p>
+      @if (pingResult()) {
+        <p class="text-[11px] font-mono text-emerald-600 font-semibold">{{ pingResult()?.latencyMs }}ms ping latency</p>
+      } @else {
+        <p class="text-[11px] text-slate-400">End-to-End Encrypted</p>
+      }
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- STATE 1: QR CODE DISPLAY (SIDE-BY-SIDE WITHOUT SCROLLING)-->
+  <!-- ======================================================== -->
+  @if (session().status === 'qr_ready' && session().qrCode) {
+    <div class="bg-white rounded-[14px] border-2 border-[#4D8DBA]/35 shadow-sm p-5 sm:p-6">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+        <!-- Left Side: Instructions & Controls (7 cols) -->
+        <div class="md:col-span-7 space-y-4">
+          <!-- Status indicator -->
+          <div class="inline-flex items-center gap-2 px-3 py-1 text-xs rounded-[8px] bg-amber-50 border border-amber-200 text-amber-800 font-semibold">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span>Waiting for WhatsApp Scan</span>
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">
+              Scan QR Code with Your Phone
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">
+              Link your device in 3 quick steps to activate automated OTP dispatch:
+            </p>
+          </div>
+
+          <!-- 3 Compact Steps -->
+          <div class="space-y-2.5 pt-1">
+            <div class="flex items-start gap-2.5">
+              <div class="w-5 h-5 rounded-[6px] bg-[#97D7FF]/25 text-[#086288] border border-[#4D8DBA]/35 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                1
+              </div>
+              <p class="text-xs text-slate-700 leading-snug">
+                Open <strong>WhatsApp</strong> on your mobile phone.
+              </p>
+            </div>
+
+            <div class="flex items-start gap-2.5">
+              <div class="w-5 h-5 rounded-[6px] bg-[#97D7FF]/25 text-[#086288] border border-[#4D8DBA]/35 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                2
+              </div>
+              <p class="text-xs text-slate-700 leading-snug">
+                Go to <strong>Settings</strong> &gt; <strong>Linked Devices</strong>.
+              </p>
+            </div>
+
+            <div class="flex items-start gap-2.5">
+              <div class="w-5 h-5 rounded-[6px] bg-[#97D7FF]/25 text-[#086288] border border-[#4D8DBA]/35 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                3
+              </div>
+              <p class="text-xs text-slate-700 leading-snug">
+                Tap <strong>Link a Device</strong> and point your camera at the QR code.
+              </p>
+            </div>
+          </div>
+
+          <!-- Actions (Button-15 Apple Style Gradients) -->
+          <div class="pt-2 flex items-center gap-3">
+            <button
+              type="button"
+              (click)="onConnectWhatsApp()"
+              [disabled]="whatsAppService.isActionLoading()"
+              class="btn-primary !text-xs !py-2.5 !px-5"
+            >
+              <span>Regenerate QR</span>
+            </button>
+            <button
+              type="button"
+              (click)="onDisconnectWhatsApp()"
+              class="btn-secondary !text-xs !py-2.5 !px-4"
+            >
+              <span>Cancel</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Side: Clean QR Box (5 cols) -->
+        <div class="md:col-span-5 flex flex-col items-center justify-center">
+          <div class="p-3 bg-white rounded-[12px] border border-slate-200 shadow-xs inline-block text-center">
+            <img
+              [src]="session().qrCode"
+              alt="WhatsApp QR Code"
+              class="w-52 h-52 sm:w-56 sm:h-56 object-contain"
+            />
+          </div>
+          <p class="text-[11px] text-slate-400 mt-2.5 flex items-center gap-1.5 font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Instant connection upon scanning</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================== -->
+  <!-- STATE 2: CONNECTING / LOADING                           -->
+  <!-- ======================================================== -->
+  @else if (session().status === 'connecting') {
+    <div class="bg-white rounded-[14px] border border-slate-200 p-8 sm:p-12 text-center shadow-xs">
+      <div class="max-w-sm mx-auto space-y-4">
+        <div class="w-12 h-12 border-3 border-[#086288] border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <h2 class="text-lg font-bold text-slate-900">Connecting to WhatsApp...</h2>
+        <p class="text-xs text-slate-500">
+          Preparing secure multi-device gateway session. Please wait.
+        </p>
+        <button
+          type="button"
+          (click)="onDisconnectWhatsApp()"
+          class="btn-secondary !text-xs !py-2 !px-4 mt-2"
+        >
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================== -->
+  <!-- STATE 3: LIVE CONNECTED (FULL WIDTH & PROTECTED DISCONNECT)-->
+  <!-- ======================================================== -->
+  @else if (session().status === 'connected') {
+    <div class="bg-white rounded-[14px] border border-emerald-200/90 p-6 sm:p-8 shadow-xs w-full space-y-6">
+      <!-- Top Bar: Status & Primary Actions -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-[12px] bg-[#086288] text-white flex items-center justify-center shadow-xs shrink-0">
+            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-[6px] bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Online &amp; Active</span>
+            </div>
+            <h2 class="text-xl font-bold text-slate-900">
+              WhatsApp Gateway Connected
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+              Linked Phone: <strong class="font-mono text-slate-900 font-bold">+{{ session().phoneNumber }}</strong>
+            </p>
+          </div>
+        </div>
+
+        <!-- Actions Group -->
+        <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <button
+            type="button"
+            (click)="onPingGateway()"
+            [disabled]="isPinging()"
+            class="btn-secondary !text-xs !py-2.5 !px-4 inline-flex items-center gap-2"
+            title="Check live WebSocket responsiveness"
+          >
+            <span class="w-2 h-2 rounded-full" [class.bg-emerald-500]="!isPinging()" [class.bg-blue-500]="isPinging()" [class.animate-pulse]="isPinging()"></span>
+            <span>{{ isPinging() ? 'Pinging Socket...' : 'Test Gateway Health' }}</span>
+          </button>
+
+          <a
+            routerLink="/dashboard/send-otp"
+            class="btn-primary !text-xs !py-2.5 !px-5 inline-flex items-center gap-2"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            <span>Send Test OTP &rarr;</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Full-Width Information Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-4 rounded-[10px] bg-slate-50 border border-slate-200/80">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Connected Phone</p>
+          <p class="font-mono font-bold text-slate-900 text-sm mt-1">+{{ session().phoneNumber || 'Active Device' }}</p>
+        </div>
+
+        <div class="p-4 rounded-[10px] bg-slate-50 border border-slate-200/80">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Gateway Status</p>
+          <p class="font-semibold text-emerald-600 text-sm mt-1 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Live &amp; Ready for OTP</span>
+          </p>
+        </div>
+
+        <div class="p-4 rounded-[10px] bg-slate-50 border border-slate-200/80">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Socket Engine</p>
+          <p class="font-semibold text-slate-800 text-sm mt-1">Multi-Device Baileys</p>
+        </div>
+
+        <div class="p-4 rounded-[10px] bg-slate-50 border border-slate-200/80">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Security Layer</p>
+          <p class="font-semibold text-slate-800 text-sm mt-1">End-to-End Encrypted</p>
+        </div>
+      </div>
+
+      <!-- Protected Disconnect Section (Prevents Accidental Logouts) -->
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+        @if (!isConfirmingDisconnect()) {
+          <p class="text-xs text-slate-400">
+            Session is securely maintained. You can disconnect at any time.
+          </p>
+          <button
+            type="button"
+            (click)="startDisconnectConfirmation()"
+            class="text-xs font-medium text-slate-500 hover:text-rose-600 transition-colors cursor-pointer py-1.5 px-3 rounded-[8px] hover:bg-rose-50"
+          >
+            <span>Disconnect Gateway...</span>
+          </button>
+        } @else {
+          <div class="w-full p-3.5 rounded-[10px] bg-rose-50 border border-rose-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-150">
+            <div class="flex items-center gap-2 text-rose-800 text-xs font-medium">
+              <svg class="w-4 h-4 text-rose-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>Are you sure? Active OTP delivery will be paused until you re-link your device.</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                (click)="onConfirmDisconnect()"
+                [disabled]="whatsAppService.isActionLoading()"
+                class="btn-danger-outline !text-xs !py-1.5 !px-3 font-semibold"
+              >
+                <span>Yes, Disconnect</span>
+              </button>
+              <button
+                type="button"
+                (click)="cancelDisconnectConfirmation()"
+                class="btn-secondary !text-xs !py-1.5 !px-3"
+              >
+                <span>Cancel</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================== -->
+  <!-- STATE 4: DISCONNECTED (CUSTOMER GUIDANCE + GET STARTED)  -->
+  <!-- ======================================================== -->
+  @else {
+    <div class="bg-white rounded-[14px] border border-slate-200/90 shadow-xs overflow-hidden">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center p-6 sm:p-8">
+        <!-- Left: Customer 3-Step Guide -->
+        <div class="md:col-span-7 space-y-4">
+          <div class="badge-brand inline-flex items-center gap-2 px-3 py-1 text-xs">
+            <span class="w-2 h-2 rounded-full bg-[#086288]"></span>
+            <span>Gateway Offline &bull; Ready to Connect</span>
+          </div>
+
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            Get Started with WhatsApp Gateway
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            Follow these 3 simple steps to link your phone and begin sending automated verification OTP codes:
+          </p>
+
+          <!-- 3 Customer Steps -->
+          <div class="space-y-3 pt-1">
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-[8px] bg-[#97D7FF]/25 text-[#086288] border border-[#4D8DBA]/35 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                1
+              </div>
+              <p class="text-xs text-slate-700 leading-snug">
+                Click <strong>Get Started &amp; Connect</strong> to generate a secure pairing QR code.
+              </p>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-[8px] bg-[#97D7FF]/25 text-[#086288] border border-[#4D8DBA]/35 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                2
+              </div>
+              <p class="text-xs text-slate-700 leading-snug">
+                Open <strong>WhatsApp</strong> on your phone &gt; <strong>Settings</strong> &gt; <strong>Linked Devices</strong>.
+              </p>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-[8px] bg-[#97D7FF]/25 text-[#086288] border border-[#4D8DBA]/35 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                3
+              </div>
+              <p class="text-xs text-slate-700 leading-snug">
+                Tap <strong>Link a Device</strong> and point your camera at the QR code.
+              </p>
+            </div>
+          </div>
+
+          <!-- Primary Get Started & Connect Action Button -->
+          <div class="pt-3">
+            <button
+              type="button"
+              (click)="onConnectWhatsApp()"
+              [disabled]="whatsAppService.isActionLoading()"
+              class="btn-primary !text-xs !py-2.5 !px-6 inline-flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              <span>Get Started &amp; Connect WhatsApp</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Illustration Graphic (Clean white background, per AGENTS.md rules) -->
+        <div class="md:col-span-5 flex items-center justify-center py-2">
+          <img
+            src="/1_41.jpg"
+            alt="WhatsApp Gateway"
+            class="max-w-[240px] sm:max-w-[270px] w-full object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  }
+</div>

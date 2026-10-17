@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+/* Sidebar navigation item - User's custom styling */
+.drawer-item {
+  background-color: transparent;
+  color: #475569;
+  border-top-right-radius: 100px;
+  border-bottom-right-radius: 100px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
+}
+
+.drawer-item svg {
+  color: #64748b;
+  transition: color 0.15s ease-in-out;
+}
+
+.drawer-item:hover {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.drawer-item:hover svg {
+  color: #0f172a;
+}
+
+/* Active navigation item */
+.drawer-item.drawer-active {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #dbeafe !important;
+  font-weight: 600;
+}
+
+.drawer-item.drawer-active svg {
+  color: #2563eb !important;
+}

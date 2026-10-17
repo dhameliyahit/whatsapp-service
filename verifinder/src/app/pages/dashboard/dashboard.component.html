@@ -1,0 +1,22 @@
+<div class="h-screen w-screen overflow-hidden flex flex-col bg-[#f8fafc] text-slate-800 font-sans">
+  <!-- Fixed Header (100vw width, 64px height) -->
+  <app-header
+    (toggleSidebar)="toggleSidebar()"
+    class="w-full shrink-0 z-30"
+  ></app-header>
+
+  <!-- Pinned Sidebar & Scrollable Main Content -->
+  <div class="flex-1 flex overflow-hidden min-h-0 w-full relative">
+    <!-- Pinned Navigation Drawer (Fixed left, full remaining height) -->
+    <app-sidebar
+      [isCollapsed]="isSidebarCollapsed()"
+      (toggleCollapse)="toggleSidebar()"
+      class="shrink-0 h-full overflow-hidden"
+    ></app-sidebar>
+
+    <!-- Scrollable Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto overflow-x-hidden p-5 sm:p-8 lg:p-10 focus:outline-none bg-[#f8fafc]">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,61 @@
+# Root & Workspace Dependencies
+node_modules/
+*/node_modules/
+
+# Compiled outputs
+dist/
+*/dist/
+out-tsc/
+*/out-tsc/
+bazel-out/
+
+# Angular cache & builds
+.angular/
+*/.angular/
+
+# Environment files & secrets (Always keep example files tracked)
+.env
+*.env
+!*.env.example
+service/.env
+
+# WhatsApp / Baileys auth & session persistence files
+*auth_info*
+*baileys*
+session*
+*.session
+tokens/
+
+# Logs
+*.log
+logs/
+*/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and Editor files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System & OS files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# Temporary directories
+tmp/
+*/tmp/
+.cache/
+.temp/

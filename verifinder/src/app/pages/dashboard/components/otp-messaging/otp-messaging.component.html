@@ -1,0 +1,514 @@
+<div class="max-w-6xl mx-auto space-y-6">
+  <!-- Top Navigation & Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Send WhatsApp OTP</h1>
+      <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+        Compose verification messages, check WhatsApp numbers, select templates, and verify OTP codes.
+      </p>
+    </div>
+    <a
+      routerLink="/dashboard"
+      class="btn-secondary !text-xs !py-2 !px-3.5 inline-flex items-center gap-1.5 shrink-0"
+    >
+      <span>&larr; Back to Gateway</span>
+    </a>
+  </div>
+
+  <!-- Gateway Offline Warning Banner (When disconnected) -->
+  @if (session().status !== 'connected') {
+    <div class="p-4 rounded-[12px] bg-[#FFEFC4]/80 border border-[#ebd398] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs animate-in fade-in duration-200">
+      <div class="flex items-center gap-2.5 text-[#78540c] text-xs font-medium">
+        <svg class="w-5 h-5 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>
+          <strong>WhatsApp Gateway Offline:</strong> Scan the QR code in the Dashboard to connect your WhatsApp account and send live messages.
+        </span>
+      </div>
+      <a
+        routerLink="/dashboard"
+        class="btn-primary !text-xs !py-1.5 !px-3.5 shrink-0 inline-flex items-center gap-1.5"
+      >
+        <span>Connect WhatsApp &rarr;</span>
+      </a>
+    </div>
+  }
+
+  <!-- Main 2-Column Responsive Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- Left Column: Custom Message Composer & Recipient (7 cols) -->
+    <div class="lg:col-span-7 space-y-5">
+      <!-- Main Dispatch Card -->
+      <div class="bg-white rounded-[14px] border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-5 relative">
+        @if (session().status !== 'connected') {
+          <div class="absolute top-4 right-4">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[10px] bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+              <span>Preview Mode</span>
+            </span>
+          </div>
+        }
+
+        <div>
+          <h2 class="text-sm font-bold text-slate-900 tracking-tight uppercase">
+            1. Recipient Phone &amp; Verification Code
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Select country code and enter recipient phone number</p>
+        </div>
+
+        <!-- Phone Input with Country Flag Dropdown + Number Lookup -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold text-slate-700">
+              Recipient Phone Number <span class="text-rose-500">*</span>
+            </label>
+
+            <!-- Live WhatsApp Number Check Button -->
+            <button
+              type="button"
+              (click)="onCheckWhatsAppEligibility()"
+              [disabled]="isCheckingNumber() || !localPhone() || session().status !== 'connected'"
+              class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700 disabled:text-slate-400 disabled:no-underline cursor-pointer"
+            >
+              @if (isCheckingNumber()) {
+                <span class="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
+                <span>Checking WhatsApp...</span>
+              } @else {
+                <svg class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <span>Check WhatsApp Eligibility</span>
+              }
+            </button>
+          </div>
+
+          <div class="flex items-stretch gap-2 country-dropdown-wrapper relative">
+            <!-- Country Selector Dropdown Trigger -->
+            <button
+              type="button"
+              (click)="toggleCountryDropdown()"
+              class="inline-flex items-center gap-2 px-3 py-2.5 text-xs font-medium bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[10px] transition-colors shrink-0 cursor-pointer shadow-2xs"
+            >
+              <span class="text-base leading-none">{{ selectedCountry().flag }}</span>
+              <span class="font-mono font-semibold text-slate-800">+{{ selectedCountry().code }}</span>
+              <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+
+            <!-- Autocomplete Country Dropdown Menu -->
+            @if (isCountryDropdownOpen()) {
+              <div class="absolute top-full left-0 mt-1.5 w-72 bg-white rounded-[12px] border border-slate-200 shadow-lg z-50 p-2 space-y-1.5 animate-in fade-in duration-150">
+                <div class="px-2 pt-1 pb-1.5 border-b border-slate-100">
+                  <input
+                    type="text"
+                    [value]="countrySearch()"
+                    (input)="countrySearch.set($any($event.target).value)"
+                    placeholder="Search country or code..."
+                    class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-[8px] focus:outline-none focus:border-blue-600"
+                    autoFocus
+                  />
+                </div>
+                <div class="max-h-56 overflow-y-auto space-y-0.5">
+                  @for (c of filteredCountries(); track c.name + c.code) {
+                    <button
+                      type="button"
+                      (click)="selectCountry(c)"
+                      class="w-full text-left px-2.5 py-2 rounded-[8px] hover:bg-slate-50 flex items-center justify-between text-xs transition-colors cursor-pointer"
+                      [class.bg-blue-50]="selectedCountry().code === c.code && selectedCountry().name === c.name"
+                      [class.font-semibold]="selectedCountry().code === c.code && selectedCountry().name === c.name"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="text-base leading-none">{{ c.flag }}</span>
+                        <span class="text-slate-800">{{ c.name }}</span>
+                      </div>
+                      <span class="font-mono text-slate-500 font-bold">+{{ c.code }}</span>
+                    </button>
+                  }
+                  @if (filteredCountries().length === 0) {
+                    <p class="text-center py-3 text-xs text-slate-400">No country matches search</p>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Local Phone Input -->
+            <input
+              type="tel"
+              [value]="localPhone()"
+              (input)="onPhoneInputChange($any($event.target).value)"
+              [placeholder]="selectedCountry().placeholder"
+              class="w-full px-3.5 py-2.5 text-xs font-mono bg-white border border-slate-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+            />
+          </div>
+
+          <!-- Live WhatsApp Number Eligibility Status Pill -->
+          <div class="flex items-center justify-between text-[11px] pt-1">
+            <span class="text-slate-400">
+              Full destination: <strong class="font-mono text-slate-700">+{{ fullPhoneNumber() || (selectedCountry().code + '...') }}</strong>
+            </span>
+
+            @if (lookupStatus() === 'valid') {
+              <span class="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-[10px] border border-emerald-200">
+                <svg class="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+                </svg>
+                <span>WhatsApp Active</span>
+              </span>
+            } @else if (lookupStatus() === 'invalid') {
+              <span class="inline-flex items-center gap-1 text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-[10px] border border-amber-200">
+                <svg class="w-3.5 h-3.5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                </svg>
+                <span>Not on WhatsApp</span>
+              </span>
+            }
+          </div>
+        </div>
+
+        <!-- 2 Columns: OTP Code & Brand Name -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-semibold text-slate-700">
+                Verification Code (OTP)
+              </label>
+              <button
+                type="button"
+                (click)="generateRandomOtp()"
+                class="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer"
+              >
+                Generate Random
+              </button>
+            </div>
+            <input
+              type="text"
+              [value]="otpCode()"
+              (input)="otpCode.set($any($event.target).value)"
+              placeholder="e.g. 482910"
+              class="w-full px-3.5 py-2.5 text-xs font-mono font-bold bg-white border border-slate-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">
+              Sender / Brand Name
+            </label>
+            <input
+              type="text"
+              [value]="brandName()"
+              (input)="brandName.set($any($event.target).value)"
+              placeholder="e.g. Verifinder or Your Business"
+              class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+            />
+          </div>
+        </div>
+
+        <div class="h-px bg-slate-100"></div>
+
+        <!-- Template Selector Section -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold text-slate-900 tracking-tight uppercase">
+              2. Select Message Template
+            </h2>
+            <span class="text-[11px] text-slate-400">Dynamic variables supported</span>
+          </div>
+
+          @if (templates().length > 0) {
+            <div class="flex flex-wrap gap-2">
+              @for (tpl of templates(); track tpl._id) {
+                <button
+                  type="button"
+                  (click)="applyTemplate(tpl)"
+                  class="px-3 py-1.5 rounded-[10px] text-xs font-medium border transition-all cursor-pointer text-left"
+                  [class.bg-blue-50]="selectedTemplateId() === tpl._id"
+                  [class.border-blue-300]="selectedTemplateId() === tpl._id"
+                  [class.text-blue-700]="selectedTemplateId() === tpl._id"
+                  [class.bg-slate-50]="selectedTemplateId() !== tpl._id"
+                  [class.border-slate-200]="selectedTemplateId() !== tpl._id"
+                  [class.text-slate-700]="selectedTemplateId() !== tpl._id"
+                >
+                  <span class="font-semibold">{{ tpl.name }}</span>
+                  <span class="text-[10px] text-slate-400 ml-1.5 font-normal uppercase">{{ tpl.category }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Custom Message Composer -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold text-slate-700">
+              Message Content (Formatted for WhatsApp)
+            </label>
+
+            <!-- Quick Action Chips -->
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                (click)="insertCodeIntoMessage()"
+                class="px-2 py-1 rounded-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-semibold transition-colors cursor-pointer"
+                title="Append code into text"
+              >
+                + Insert Code
+              </button>
+              <button
+                type="button"
+                (click)="resetDefaultMessage()"
+                class="px-2 py-1 rounded-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-semibold transition-colors cursor-pointer"
+                title="Reset to standard text"
+              >
+                Reset Default
+              </button>
+            </div>
+          </div>
+
+          <!-- Direct Message Textarea -->
+          <textarea
+            rows="5"
+            [value]="messageText()"
+            (input)="messageText.set($any($event.target).value)"
+            placeholder="Type verification message here..."
+            class="w-full p-3 text-xs bg-white border border-slate-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all leading-relaxed font-mono"
+          ></textarea>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Customer receives this exact message on WhatsApp</span>
+            <span>{{ messageText().length }} characters</span>
+          </div>
+        </div>
+
+        <!-- Dispatch Bar -->
+        <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div class="text-xs text-slate-500">
+            @if (session().status === 'connected') {
+              <span class="inline-flex items-center gap-1.5 text-emerald-700 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Active via +{{ session().phoneNumber }}</span>
+              </span>
+            } @else {
+              <span class="text-slate-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span>Gateway is offline (Connect to dispatch)</span>
+              </span>
+            }
+          </div>
+
+          <button
+            type="button"
+            (click)="onSendOtp()"
+            [disabled]="isSending() || session().status !== 'connected'"
+            class="btn-primary !text-xs !py-2.5 !px-6 inline-flex items-center gap-2 w-full sm:w-auto justify-center"
+          >
+            @if (isSending()) {
+              <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>Dispatching Code...</span>
+            } @else {
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              <span>Send Verification Code</span>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Test OTP Verification Sandbox Tool (Connected to Server Verification Engine) -->
+      <div class="bg-white rounded-[14px] border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 tracking-tight">
+              Test OTP Verification (Server-Side Engine)
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Simulates client application calling <code class="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">POST /api/otp/verify</code> with rate-limiting &amp; attempt tracking.
+            </p>
+          </div>
+          <span class="px-2 py-0.5 rounded-[10px] bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-semibold uppercase">Live Engine</span>
+        </div>
+
+        <div class="p-3.5 rounded-[12px] bg-slate-50 border border-slate-200/80 space-y-3">
+          <div class="flex flex-col sm:flex-row items-center gap-3">
+            <div class="w-full sm:flex-1">
+              <input
+                type="text"
+                [value]="verificationInput()"
+                (input)="verificationInput.set($any($event.target).value)"
+                placeholder="Enter 6-digit code received by customer"
+                class="w-full px-3.5 py-2.5 text-xs font-mono font-bold bg-white border border-slate-200 rounded-[10px] focus:outline-none focus:border-blue-600"
+              />
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                (click)="autofillTestOtp()"
+                class="btn-secondary !text-xs !py-2.5 !px-3"
+                title="Fill sent OTP code"
+              >
+                <span>Autofill Sent Code</span>
+              </button>
+              <button
+                type="button"
+                (click)="onVerifyTestOtp()"
+                [disabled]="isVerifying() || !verificationInput()"
+                class="btn-primary !text-xs !py-2.5 !px-5 inline-flex items-center gap-1.5"
+              >
+                @if (isVerifying()) {
+                  <span class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  <span>Verifying...</span>
+                } @else {
+                  <span>Verify Code</span>
+                }
+              </button>
+            </div>
+          </div>
+
+          <!-- Result Feedback Alert -->
+          @if (verificationResult() === 'success') {
+            <div class="p-3 rounded-[10px] bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between gap-2 font-medium animate-in fade-in duration-150">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span>{{ verificationFeedback() }}</span>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-[8px] border border-emerald-300">
+                Webhook Dispatched
+              </span>
+            </div>
+          } @else if (verificationResult() === 'failed') {
+            <div class="p-3 rounded-[10px] bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-2 font-medium animate-in fade-in duration-150">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-rose-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <span>{{ verificationFeedback() }}</span>
+              </div>
+              @if (attemptsRemaining() !== null) {
+                <span class="text-[10px] font-bold text-rose-700 bg-white px-2 py-0.5 rounded-[8px] border border-rose-300">
+                  {{ attemptsRemaining() }} Attempts Left
+                </span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Real WhatsApp Phone Chat Bubble Preview (5 cols) -->
+    <div class="lg:col-span-5 space-y-4">
+      <div class="bg-white rounded-[14px] border border-slate-200/90 shadow-xs p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            Live Customer WhatsApp Preview
+          </p>
+          <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[10px] border border-emerald-200">
+            Real-Time
+          </span>
+        </div>
+
+        <!-- Phone Mockup Container -->
+        <div class="rounded-[14px] border border-slate-300 shadow-sm overflow-hidden bg-[#efeae2]">
+          <!-- WhatsApp Chat Header Bar -->
+          <div class="bg-[#075e54] text-white p-3 flex items-center justify-between">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-full bg-[#128C7E] border border-white/20 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                {{ (brandName() || 'V').substring(0, 1).toUpperCase() }}
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold truncate leading-tight flex items-center gap-1">
+                  <span>{{ brandName() || 'Verifinder' }}</span>
+                  <svg class="w-3.5 h-3.5 text-blue-300 shrink-0 inline" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                </p>
+                <p class="text-[10px] text-emerald-200 leading-tight">Verified Business Account</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-white/80">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Chat Messages Area (Authentic WhatsApp Look) -->
+          <div class="p-4 space-y-3 min-h-[300px] flex flex-col justify-end">
+            <!-- Timestamp Tag -->
+            <div class="text-center">
+              <span class="inline-block px-2.5 py-0.5 rounded-[10px] bg-white/70 shadow-2xs text-[10px] text-slate-500 font-semibold uppercase">
+                Today
+              </span>
+            </div>
+
+            <!-- WhatsApp Inbound Message Speech Bubble -->
+            <div class="bg-white rounded-tl-[4px] rounded-tr-[12px] rounded-br-[12px] rounded-bl-[12px] p-3 shadow-xs border border-slate-200/50 max-w-[95%] relative">
+              <!-- Sender Header -->
+              <p class="text-[11px] font-bold text-[#075e54] mb-1">
+                {{ brandName() || 'Verifinder' }}
+              </p>
+
+              <!-- Main Message Body -->
+              <div class="text-xs text-slate-800 leading-relaxed whitespace-pre-line font-sans">
+                {{ messageText() }}
+              </div>
+
+              <!-- Message Footer (Time & Blue Checkmarks) -->
+              <div class="flex items-center justify-end gap-1 mt-1.5 text-[10px] text-slate-400">
+                <span>{{ lastSentAt() || 'Just now' }}</span>
+                <span class="text-[#34B7F1] font-bold text-[11px] leading-none" title="Delivered">✓✓</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-400 text-center mt-3">
+          Reflects customer's mobile WhatsApp screen in real-time.
+        </p>
+      </div>
+
+      <!-- Recent Message Logs Table -->
+      @if (recentLogs().length > 0) {
+        <div class="bg-white rounded-[14px] border border-slate-200/90 shadow-xs p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              Recent Dispatches
+            </h4>
+            <a routerLink="/dashboard/logs" class="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer">
+              View All Logs &rarr;
+            </a>
+          </div>
+
+          <div class="space-y-1.5">
+            @for (log of recentLogs(); track log._id) {
+              <div class="p-2.5 rounded-[10px] bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+                <div>
+                  <p class="font-mono font-bold text-slate-900">+{{ log.to }}</p>
+                  <p class="text-[10px] text-slate-400">Code: <strong class="font-mono text-slate-700">{{ log.otpCode || '—' }}</strong></p>
+                </div>
+                <div class="text-right">
+                  <span class="inline-block px-2 py-0.5 rounded-[10px] text-[10px] font-semibold uppercase"
+                    [class.bg-emerald-50]="log.status === 'sent' || log.status === 'delivered'"
+                    [class.text-emerald-700]="log.status === 'sent' || log.status === 'delivered'"
+                    [class.border]="true"
+                    [class.border-emerald-200]="log.status === 'sent' || log.status === 'delivered'"
+                  >
+                    {{ log.status }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

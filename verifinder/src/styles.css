@@ -1,0 +1,347 @@
+/* Angular Material Prebuilt Theme */
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+/* Tailwind CSS */
+@import 'tailwindcss';
+
+:root {
+  /* Verifinder Design Palette */
+  --color-primary: #086288;
+  --color-primary-rgb: 8, 98, 136;
+  --color-primary-hover: #064e6d;
+
+  --color-secondary: #4D8DBA;
+  --color-secondary-rgb: 77, 141, 186;
+
+  --color-sky: #97D7FF;
+  --color-sky-rgb: 151, 215, 255;
+
+  --color-warm: #FFEFC4;
+  --color-warm-rgb: 255, 239, 196;
+
+  --primary-blue: #086288;
+  --primary-blue-hover: #064e6d;
+  --primary-purple: #4D8DBA;
+  --primary-purple-hover: #086288;
+  --border-radius: 12px; /* strictly 10-14px per design guidelines */
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ============================================== */
+/* REUSABLE PLATFORM DESIGN SYSTEM (10-15px Radius) */
+/* ============================================== */
+
+/* Standard Card */
+.platform-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* ======================================================== */
+/* ENTERPRISE SOLID BUTTON STYLES                           */
+/* Clean, Accessible, Crisp for Real Production Users        */
+/* ======================================================== */
+
+/* Primary Button (Solid Crisp Meta/Facebook Blue) */
+.btn-primary {
+  background-color: #1877f2;
+  border: 1px solid #1877f2;
+  border-radius: 10px;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  cursor: pointer;
+  direction: ltr;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  line-height: 1.45;
+  min-width: 30px;
+  padding: 0.55rem 1.15rem;
+  text-align: center;
+  vertical-align: baseline;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+  pointer-events: none;
+}
+
+.btn-primary:hover {
+  background-color: #166fe5;
+  border-color: #166fe5;
+  text-decoration: none;
+}
+
+.btn-primary:active {
+  background-color: #0e5aae;
+  border-color: #0e5aae;
+  outline: none;
+}
+
+.btn-primary:focus,
+.btn-primary:focus-visible {
+  box-shadow: rgba(24, 119, 242, 0.35) 0 0 0 3px;
+  outline: none;
+}
+
+/* Secondary / Outline Button (Solid Clean Enterprise Outline) */
+.btn-secondary {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-sizing: border-box;
+  color: #334155;
+  cursor: pointer;
+  direction: ltr;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  line-height: 1.45;
+  min-width: 30px;
+  padding: 0.55rem 1.15rem;
+  text-align: center;
+  vertical-align: baseline;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.btn-secondary:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+  pointer-events: none;
+}
+
+.btn-secondary:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.btn-secondary:active {
+  background-color: #f1f5f9;
+  border-color: #64748b;
+  outline: none;
+}
+
+.btn-secondary:focus,
+.btn-secondary:focus-visible {
+  box-shadow: rgba(203, 213, 225, 0.6) 0 0 0 3px;
+  outline: none;
+}
+
+/* Danger Outline Button */
+.btn-danger-outline,
+.btn-danger {
+  background-color: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  box-sizing: border-box;
+  color: #dc2626;
+  cursor: pointer;
+  direction: ltr;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  line-height: 1.45;
+  min-width: 30px;
+  padding: 0.55rem 1.1rem;
+  text-align: center;
+  vertical-align: baseline;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px 0 rgba(220, 38, 38, 0.03);
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.btn-danger-outline:disabled,
+.btn-danger:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+  pointer-events: none;
+}
+
+.btn-danger-outline:hover,
+.btn-danger:hover {
+  background-color: #fef2f2;
+  border-color: #f87171;
+  color: #b91c1c;
+  text-decoration: none;
+}
+
+.btn-danger-outline:active {
+  background-color: #fee2e2;
+  border-color: #ef4444;
+  outline: none;
+}
+
+.btn-danger-outline:focus,
+.btn-danger-outline:focus-visible {
+  box-shadow: rgba(248, 113, 113, 0.35) 0 0 0 3px;
+  outline: none;
+}
+
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--border-radius);
+  background-color: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.btn-google:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* Badges */
+.badge-emerald {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  border-radius: 6px;
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-blue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 6px;
+  background-color: rgba(151, 215, 255, 0.25);
+  color: var(--color-primary);
+  border: 1px solid var(--color-sky);
+}
+
+.badge-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background-color: rgba(151, 215, 255, 0.22);
+  color: var(--color-primary);
+  border: 1px solid rgba(77, 141, 186, 0.4);
+}
+
+/* Clean Utility Skeleton Loader (For Real Production Loading UX) */
+.skeleton-box {
+  background-color: #e2e8f0;
+  animation: pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-radius: 6px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Reusable Graphic Display (Clean on White BG, No nested boxes or double borders) */
+.platform-graphic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.platform-graphic img {
+  max-width: 260px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Single-Border QR Container */
+.qr-display-box {
+  display: inline-block;
+  padding: 0.75rem;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Standard Form Input (10-12px Radius) */
+.input-control {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.75rem;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.15s ease-in-out;
+}
+
+.input-control:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(8, 98, 136, 0.18);
+}

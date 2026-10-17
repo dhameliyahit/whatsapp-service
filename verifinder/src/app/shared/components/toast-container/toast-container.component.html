@@ -1,0 +1,91 @@
+
+<!-- Compact Floating Toast Notifications (Bottom-Center) -->
+<div
+  class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[9999] flex w-[330px] max-w-[calc(100vw-32px)] flex-col gap-2 items-center pointer-events-none"
+>
+  @for (toast of toasts(); track toast.id) {
+    <div
+      class="pointer-events-auto relative flex min-h-[52px] w-full items-center gap-2.5 overflow-hidden rounded-[10px] border bg-white px-3 py-2.5 shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-200"
+      [class.toast-enter]="!toast.isClosing"
+      [class.toast-exit]="toast.isClosing"
+      [class.border-emerald-200]="toast.type === 'success'"
+      [class.border-rose-200]="toast.type === 'error'"
+      [class.border-amber-200]="toast.type === 'warning'"
+      [class.border-indigo-200]="toast.type === 'info'"
+    >
+      <!-- Highlighted Status Icon -->
+      @switch (toast.type) {
+        @case ('success') {
+          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm shadow-emerald-500/15 ring-2 ring-emerald-500/20">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m5 12 4 4L19 6" />
+            </svg>
+          </div>
+        }
+        @case ('error') {
+          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-600 shadow-sm shadow-rose-500/15 ring-2 ring-rose-500/20">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="m15 9-6 6m0-6 6 6" />
+            </svg>
+          </div>
+        }
+        @case ('warning') {
+          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-600 shadow-sm shadow-amber-500/15 ring-2 ring-amber-500/20">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+              <path d="M12 9v4m0 4h.01" />
+            </svg>
+          </div>
+        }
+        @default {
+          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-500/15 ring-2 ring-indigo-500/20">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4m0-4h.01" />
+            </svg>
+          </div>
+        }
+      }
+
+      <!-- Title & Description -->
+      <div class="min-w-0 flex-1 pr-1">
+        <p class="truncate text-[13px] font-semibold leading-tight text-slate-800">
+          {{ toast.title }}
+        </p>
+
+        @if (toast.message) {
+          <p class="mt-0.5 truncate text-[11.5px] leading-tight text-slate-500">
+            {{ toast.message }}
+          </p>
+        }
+      </div>
+
+      <!-- Compact Close Button -->
+      <button
+        type="button"
+        (click)="dismiss(toast.id)"
+        class="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-[5px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+        aria-label="Close notification"
+      >
+        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m18 6-12 12M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Bottom Automatic Countdown Timer Line -->
+      @if ((toast.duration || 0) > 0) {
+        <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-slate-100 overflow-hidden">
+          <div
+            class="h-full animate-toast-progress"
+            [style.animationDuration.ms]="toast.duration"
+            [class.bg-emerald-500]="toast.type === 'success'"
+            [class.bg-rose-500]="toast.type === 'error'"
+            [class.bg-amber-500]="toast.type === 'warning'"
+            [class.bg-indigo-500]="toast.type === 'info'"
+          ></div>
+        </div>
+      }
+    </div>
+  }
+</div>
