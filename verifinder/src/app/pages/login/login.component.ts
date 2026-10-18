@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, AfterViewInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -12,7 +12,7 @@ import { environment } from '../../../environments/environment';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, AfterViewInit {
   readonly authService = inject(AuthService);
   readonly toastService = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
@@ -20,6 +20,7 @@ export class LoginComponent implements OnInit {
   readonly returnUrl = signal<string>('/dashboard');
   readonly legalModal = signal<'tos' | 'privacy' | null>(null);
   readonly isDev = !environment.production;
+  readonly isGoogleNativeLoaded = signal<boolean>(false);
 
   openTos(): void {
     this.legalModal.set('tos');
@@ -47,6 +48,43 @@ export class LoginComponent implements OnInit {
     this.authService.initializeGoogleSignIn((credential: string) => {
       this.onGoogleCredentialReceived(credential);
     });
+  }
+
+  ngAfterViewInit(): void {
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        this.renderNativeGoogleButton();
+      }, 250);
+    }
+  }
+
+  private renderNativeGoogleButton(): void {
+    const container = document.getElementById('googleNativeBtn');
+    if (container) {
+      this.authService
+        .renderGoogleButton(
+          container,
+          (credential: string) => {
+            this.onGoogleCredentialReceived(credential);
+          },
+          {
+            width: 320,
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'left'
+          }
+        )
+        .then(() => {
+          if (container.children.length > 0) {
+            this.isGoogleNativeLoaded.set(true);
+          }
+        })
+        .catch(err => {
+          console.warn('Native Google button render notice:', err);
+        });
+    }
   }
 
   /**

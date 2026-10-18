@@ -265,33 +265,61 @@ export class AuthService {
       // Approach 1: OAuth 2.0 Token Client (Official GIS popup for custom buttons)
       if (google.accounts?.oauth2) {
         return await new Promise<boolean>((resolve) => {
+          let hasReceivedToken = false;
+          let isAuthenticating = false;
+          let isCompleted = false;
+
           try {
             this.tokenClient = google.accounts.oauth2.initTokenClient({
               client_id: clientId,
               scope: 'email profile openid',
               callback: async (tokenResponse: any) => {
                 if (tokenResponse?.access_token) {
+                  hasReceivedToken = true;
+                  isAuthenticating = true;
+                  this.authError.set(null);
                   this.loadingMessage.set('Authenticating with server...');
+
                   const ok = await this.loginWithGoogleBackend(
                     { accessToken: tokenResponse.access_token },
                     redirectUrl
                   );
+                  isCompleted = true;
+                  isAuthenticating = false;
                   resolve(ok);
                 } else if (tokenResponse?.error) {
+                  hasReceivedToken = true;
                   this.isLoading.set(false);
-                  this.authError.set(`Google sign-in error: ${tokenResponse.error}`);
+                  this.authError.set(`Google sign-in error: ${tokenResponse.error_description || tokenResponse.error}`);
                   resolve(false);
                 } else {
                   this.isLoading.set(false);
-                  this.authError.set('No authorization token received from Google.');
                   resolve(false);
                 }
               },
               error_callback: (error: any) => {
-                this.isLoading.set(false);
+                // If token was already received or we are authenticating, do not interrupt!
+                if (hasReceivedToken || isAuthenticating || isCompleted) {
+                  return;
+                }
+
+                // If popup was closed:
                 if (error?.type === 'popup_closed') {
-                  this.authError.set('Google sign-in window was closed.');
-                } else if (error?.type === 'popup_failed_to_open') {
+                  // Give a 1500ms grace period because the window-close event can fire before or concurrently with token delivery
+                  setTimeout(() => {
+                    if (hasReceivedToken || isAuthenticating || isCompleted) {
+                      return; // Token arrived during grace period! Not an error.
+                    }
+                    this.isLoading.set(false);
+                    // Do not show an error banner when the user simply closes the popup
+                    this.authError.set(null);
+                    resolve(false);
+                  }, 1500);
+                  return;
+                }
+
+                this.isLoading.set(false);
+                if (error?.type === 'popup_failed_to_open') {
                   this.authError.set('Popup was blocked by your browser. Please allow popups for this site.');
                 } else {
                   this.authError.set(error?.message || 'Google authentication was cancelled.');
@@ -393,7 +421,17 @@ export class AuthService {
       }
 
       this.currentUser.set(user);
-      this.router.navigateByUrl(redirectUrl);
+      try {
+        const navigated = await this.router.navigateByUrl(redirectUrl);
+        if (!navigated) {
+          await this.router.navigate(['/dashboard']);
+        }
+      } catch (navErr) {
+        console.warn('[AuthService] Router navigation notice:', navErr);
+        if (isPlatformBrowser(this.platformId)) {
+          window.location.href = redirectUrl || '/dashboard';
+        }
+      }
       return true;
     } catch (error: any) {
       const msg =
