@@ -13,13 +13,21 @@ import { sendError } from './utils/response.util';
 export const createApp = (): Application => {
   const app: Application = express();
 
-  // Security headers (allows inline styles and external scripts for Angular & Google auth)
+  // Security headers (configured to allow Google Identity Services popups to communicate back to window.opener)
   app.use(
     helmet({
       contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
+      crossOriginResourcePolicy: false,
     })
   );
+
+  // Ensure Cross-Origin-Opener-Policy is never set to same-origin so Google OAuth popups can close and postMessage
+  app.use((req: Request, res: Response, next) => {
+    res.removeHeader('Cross-Origin-Opener-Policy');
+    next();
+  });
 
   // CORS configuration
   app.use(
