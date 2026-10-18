@@ -42,10 +42,70 @@ export class AuthService {
   }
 
   /**
-   * Authenticate or register user via Google OAuth credential
+   * Verify Google Access Token via Google OAuth2 userinfo endpoint
    */
-  async authenticateWithGoogle(idToken: string): Promise<GoogleAuthResult> {
-    const googleProfile = await this.verifyGoogleToken(idToken);
+  async verifyGoogleAccessToken(accessToken: string) {
+    try {
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Google profile verification failed (${response.status}): ${errorText}`);
+      }
+
+      const payload = (await response.json()) as any;
+      if (!payload || !payload.sub || !payload.email) {
+        throw new Error('Invalid Google userinfo payload.');
+      }
+
+      return {
+        googleId: payload.sub,
+        email: payload.email,
+        name: payload.name || payload.given_name || 'User',
+        givenName: payload.given_name,
+        familyName: payload.family_name,
+        picture: payload.picture || '',
+        emailVerified: !!payload.email_verified,
+      };
+    } catch (error: any) {
+      throw new Error(`Google access token verification failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Authenticate or register user via Google OAuth credential (supports both ID Token and Access Token)
+   */
+  async authenticateWithGoogle(
+    tokenInput: string | { idToken?: string; accessToken?: string }
+  ): Promise<GoogleAuthResult> {
+    const idToken = typeof tokenInput === 'string' ? tokenInput : tokenInput?.idToken;
+    const googleAccessToken = typeof tokenInput === 'object' ? tokenInput?.accessToken : undefined;
+
+    let googleProfile;
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      (idToken === 'dev-mock-token' || googleAccessToken === 'dev-mock-token')
+    ) {
+      googleProfile = {
+        googleId: 'dev_mock_google_id_12345',
+        email: 'developer@verifinder.com',
+        name: 'Verifinder Developer',
+        givenName: 'Verifinder',
+        familyName: 'Developer',
+        picture: '',
+        emailVerified: true,
+      };
+    } else if (idToken) {
+      googleProfile = await this.verifyGoogleToken(idToken);
+    } else if (googleAccessToken) {
+      googleProfile = await this.verifyGoogleAccessToken(googleAccessToken);
+    } else {
+      throw new Error('Neither Google ID Token nor Access Token was provided.');
+    }
 
     // Find existing user by googleId or email
     let user = await User.findOne({

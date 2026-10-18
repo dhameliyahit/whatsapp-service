@@ -12,13 +12,17 @@ export class AuthController {
   async googleLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const idToken = req.body.idToken || req.body.credential;
+      const accessToken = req.body.accessToken || req.body.access_token;
 
-      if (!idToken) {
-        sendError(res, 'Google ID Token or credential is required.', 400);
+      if (!idToken && !accessToken) {
+        sendError(res, 'Google ID Token or Access Token is required.', 400);
         return;
       }
 
-      const { user, accessToken, refreshToken } = await authService.authenticateWithGoogle(idToken);
+      const { user, accessToken: jwtAccessToken, refreshToken } = await authService.authenticateWithGoogle({
+        idToken,
+        accessToken,
+      });
 
       // Optionally set HTTP-only cookie for refresh token
       res.cookie('refreshToken', refreshToken, {
@@ -32,7 +36,7 @@ export class AuthController {
         res,
         {
           user,
-          accessToken,
+          accessToken: jwtAccessToken,
           refreshToken,
         },
         'Google authentication successful.'

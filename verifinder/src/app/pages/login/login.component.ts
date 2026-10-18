@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -18,6 +19,7 @@ export class LoginComponent implements OnInit {
 
   readonly returnUrl = signal<string>('/dashboard');
   readonly legalModal = signal<'tos' | 'privacy' | null>(null);
+  readonly isDev = !environment.production;
 
   openTos(): void {
     this.legalModal.set('tos');
@@ -31,27 +33,67 @@ export class LoginComponent implements OnInit {
     this.legalModal.set(null);
   }
 
+  dismissError(): void {
+    this.authService.authError.set(null);
+  }
+
   ngOnInit(): void {
     const returnUrlParam = this.route.snapshot.queryParams['returnUrl'];
     if (returnUrlParam) {
       this.returnUrl.set(returnUrlParam);
     }
 
-    // Initialize Google Identity Services with backend authentication callback
+    // Pre-initialize Google Identity Services
     this.authService.initializeGoogleSignIn((credential: string) => {
       this.onGoogleCredentialReceived(credential);
     });
   }
 
-  onGoogleClick(): void {
-    if (!this.authService.isGoogleLoaded()) {
-      this.toastService.info('Connecting', 'Initializing Google Identity Services...');
-    }
+  /**
+   * Main Google Sign-In click handler with instant loading state
+   */
+  async onGoogleClick(): Promise<void> {
+    if (this.authService.isLoading()) return;
 
-    this.authService.initializeGoogleSignIn((credential: string) => {
-      this.onGoogleCredentialReceived(credential);
-    });
-    this.authService.promptGoogleSignIn();
+    this.authService.authError.set(null);
+
+    const success = await this.authService.signInWithGoogle(this.returnUrl());
+
+    if (success) {
+      const user = this.authService.currentUser();
+      this.toastService.success(
+        'Authentication Successful',
+        `Welcome back, ${user?.name || 'User'}!`
+      );
+    } else {
+      const errorMsg = this.authService.authError();
+      if (errorMsg) {
+        this.toastService.error('Sign-In Notice', errorMsg);
+      }
+    }
+  }
+
+  /**
+   * Developer login bypass for local testing
+   */
+  async onDevLogin(): Promise<void> {
+    if (this.authService.isLoading()) return;
+
+    this.authService.authError.set(null);
+    const success = await this.authService.loginWithDevMock(this.returnUrl());
+
+    if (success) {
+      const user = this.authService.currentUser();
+      this.toastService.success(
+        'Developer Authentication',
+        `Welcome, ${user?.name || 'Developer'}!`
+      );
+    } else {
+      this.toastService.error(
+        'Authentication Failed',
+        this.authService.authError() || 'Could not connect to backend server.'
+      );
+    }
   }
 
   private async onGoogleCredentialReceived(credential: string): Promise<void> {
