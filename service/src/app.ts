@@ -53,13 +53,28 @@ export const createApp = (): Application => {
   const clientDistDir = candidateDistDirs.find((dir) => fs.existsSync(dir));
 
   if (clientDistDir) {
-    app.use(express.static(clientDistDir, { maxAge: '1d' }));
+    app.use(
+      express.static(clientDistDir, {
+        maxAge: '1d',
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          }
+        },
+      })
+    );
 
     // SPA fallback: non-API GET requests serve index.html with runtime config injected
     app.get('*', (req: Request, res: Response, next) => {
       if (req.path.startsWith('/api')) {
         return next();
       }
+
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
 
       const indexFile = fs.existsSync(path.join(clientDistDir, 'index.html'))
         ? path.join(clientDistDir, 'index.html')
